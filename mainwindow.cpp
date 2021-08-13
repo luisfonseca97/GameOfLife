@@ -4,13 +4,14 @@
 #include <algorithm>
 #include <QDebug>
 #include <QMouseEvent>
+#include <QSlider>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    QGraphicsScene *scene = new QGraphicsScene(0, 0, WIDTH, HEIGHT);
+    QGraphicsScene *scene = new QGraphicsScene(0, 0, WIDTH, HEIGHT+70);
 
     //background:
     scene->setBackgroundBrush(Qt::gray);
@@ -22,6 +23,14 @@ MainWindow::MainWindow(QWidget *parent)
     osRect->setBrush(QBrush(rectCol));
     scene->addItem(glRect);
     scene->addItem(osRect);
+    QGraphicsTextItem *glText = new QGraphicsTextItem("Gliders");
+    glText->setPos(415,75);
+    glText->setDefaultTextColor(textColor);
+    scene->addItem(glText);
+    QGraphicsTextItem *osText = new QGraphicsTextItem("Oscilators");
+    osText->setPos(415,205);
+    osText->setDefaultTextColor(textColor);
+    scene->addItem(osText);
 
     for (int i = 0; i <= NCOL; i++)
     {
@@ -107,6 +116,46 @@ MainWindow::MainWindow(QWidget *parent)
     rndButton->setText("Random Layout");
     scene->addWidget(rndButton);
 
+    //adding sliders:
+    //reproduction slider
+    QSlider *repSlider;
+    repSlider = new QSlider(Qt::Horizontal);
+    repSlider->setGeometry(20,440,100,20);
+    repSlider->setRange(0,8);
+    repSlider->setValue(3);
+    scene->addWidget(repSlider);
+
+    QGraphicsTextItem *sl1Text = new QGraphicsTextItem("Reprodution:");
+    sl1Text->setPos(20,420);
+    sl1Text->setDefaultTextColor(textColor);
+    scene->addItem(sl1Text);
+
+    //underpopulation slider
+    QSlider *underPopSlider;
+    underPopSlider = new QSlider(Qt::Horizontal);
+    underPopSlider->setGeometry(140,440,100,20);
+    underPopSlider->setRange(0,8);
+    underPopSlider->setValue(1);
+    scene->addWidget(underPopSlider);
+
+    QGraphicsTextItem *sl2Text = new QGraphicsTextItem("Underpopulation:");
+    sl2Text->setPos(140,420);
+    sl2Text->setDefaultTextColor(textColor);
+    scene->addItem(sl2Text);
+
+    //overpopulation slider -> play goes to true when I uncomment
+    /**QSlider *overPopSlider;
+    overPopSlider = new QSlider(Qt::Horizontal);
+    overPopSlider->setGeometry(260,440,100,20);
+    overPopSlider->setRange(0,8);
+    overPopSlider->setValue(4);
+    scene->addWidget(overPopSlider);
+
+    QGraphicsTextItem *sl3Text = new QGraphicsTextItem("Overpopulation:");
+    sl3Text->setPos(260,420);
+    sl3Text->setDefaultTextColor(textColor);
+    scene->addItem(sl3Text);**/
+
     //building the cells matrix:
     for (int i = 0; i<NCOL; i++) {
         for (int j = 0; j<NCOL; j++) {
@@ -133,16 +182,16 @@ MainWindow::MainWindow(QWidget *parent)
     mat[2][4].alive = true;
     mat[3][4].alive = true;
 
+    bool play = false;
+
     updateScene(mat, scene);
 
     //make scene
     QGraphicsView *view = new QGraphicsView(scene);
-    view->setFixedSize(670, 410);
+    view->setFixedSize(670, 480);
     view->show();
 
     QTimer *_timer = new QTimer; //for the animation
-
-    bool play = false;
 
     //connect the buttons:
     connect(clearButton, &QPushButton::clicked, scene, [this, &play, scene](){
@@ -182,7 +231,7 @@ MainWindow::MainWindow(QWidget *parent)
         }
     });
 
-    //I have troubles when uncommenting this block, don't know why
+    //play goes to true when uncommenting this block, don't know why
     /**connect(gl4Button, &QPushButton::clicked, scene, [this, &play, scene](){
         if (!play) {
             clearMatrix(mat);
@@ -224,7 +273,7 @@ MainWindow::MainWindow(QWidget *parent)
         }
     });
 
-    //This one also gives me problems
+    //play goes to true when uncommenting the block
     /**connect(glGunButton, &QPushButton::clicked, scene, [this, &play, scene](){
         if (!play) {
             clearMatrix(mat);
@@ -300,11 +349,11 @@ void MainWindow::step(Cell mat[NCOL][NCOL]) //animation step
             aliveCount = countAlive(mat[i][j],mat);
             //rules:
             if(!mat[i][j].alive){
-                if(aliveCount == 3) {
+                if(aliveCount == reprNumber) {
                     living.push_back(make_pair(i,j));
                 }
             }
-            else if (aliveCount == 2 || aliveCount == 3) {
+            else if (aliveCount > maxUnder && aliveCount < minOver) {
                 living.push_back(make_pair(i,j));
             }
         }
