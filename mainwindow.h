@@ -27,10 +27,14 @@ const int WIDTH = 660;
 const int HEIGHT = 400;
 const int SIZE = 10;
 const int NCOL = HEIGHT/SIZE; //SIZE must be a divisor of HEIGHT
+const int reprNumber = 3; //number of neighbours for reproduction
+const int maxUnder = 1; //maximum number of neighbours for underpopulation
+const int minOver = 4; //minimum number of neighbours for overpopulation
 
 const QColor aliveCol = QColor(200,200,200);
 const QColor deadCol = QColor(50,50,50);
 const QColor rectCol = QColor(100,100,100);
+const QColor textColor = Qt::white;
 
 class Cell {
 public:
