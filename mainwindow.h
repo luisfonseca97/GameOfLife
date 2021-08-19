@@ -11,6 +11,7 @@
 #include <QGraphicsItem>
 #include <QGraphicsView>
 #include <QTimer>
+#include <QSlider>
 
 
 QT_BEGIN_NAMESPACE
@@ -71,6 +72,19 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    //Rules:
+    int repRule = 3; //reproduction rule
+    int underRule = 1; //underpopulation rule
+    int overRule = 4; //overpopulation rule
+
+    QSlider *repSlider;
+    QSlider *underPopSlider;
+    QSlider *overPopSlider;
+
+    QGraphicsTextItem *sl1Text = new QGraphicsTextItem("Reprodution:");
+    QGraphicsTextItem *sl2Text = new QGraphicsTextItem("Underpopulation:");
+    QGraphicsTextItem *sl3Text = new QGraphicsTextItem("Overpopulation:");
+
     void updateScene(Cell mat[NCOL][NCOL], QGraphicsScene *scene);
 
     int countAlive(Cell c, Cell mat[NCOL][NCOL]);
@@ -92,5 +106,9 @@ public:
 private:
     Ui::MainWindow *ui;
     Cell mat[NCOL][NCOL] = {};
+
+public slots:
+    void updateRules();
+
 };
 #endif // MAINWINDOW_H
