@@ -10,7 +10,6 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    QGraphicsScene *scene = new QGraphicsScene(0, 0, WIDTH, HEIGHT+70);
 
     //background:
     scene->setBackgroundBrush(Qt::gray);
@@ -174,141 +173,40 @@ MainWindow::MainWindow(QWidget *parent)
     mat[2][4].alive = true;
     mat[3][4].alive = true;
 
-    bool play = true;
-
     updateScene(mat, scene);
 
-    //make scene
-    QGraphicsView *view = new QGraphicsView(scene);
     view->setFixedSize(670, 480);
     view->show();
 
     QTimer *_timer = new QTimer; //for the animation
 
     //connect the buttons:
-    connect(clearButton, &QPushButton::clicked, scene, [this, &play, scene](){
-        if (!play) {
-            clearMatrix(mat);
-            updateScene(mat, scene);
-        }
-    });
+    connect(clearButton, &QPushButton::clicked, this, &MainWindow::clearButtonSlot);
 
-    connect(button1, &QPushButton::clicked, this, [&play]()
-    {
-        play = !play;
-    }
-    );
+    connect(button1, &QPushButton::clicked, this, &MainWindow::switchPlay);
 
-    connect(gl1Button, &QPushButton::clicked, scene, [this, &play, scene](){
-        if (!play) {
-            clearMatrix(mat);
-            buildGliders(mat, 0);
-            updateScene(mat, scene);
-        }
-    });
+    connect(gl1Button, &QPushButton::clicked, this, &MainWindow::gl1Slot);
+    connect(gl2Button, &QPushButton::clicked, this, &MainWindow::gl2Slot);
+    connect(gl3Button, &QPushButton::clicked, this, &MainWindow::gl3Slot);
+    connect(gl4Button, &QPushButton::clicked, this, &MainWindow::gl4Slot);
 
-    connect(gl2Button, &QPushButton::clicked, scene, [this, &play, scene](){
-        if (!play) {
-            clearMatrix(mat);
-            buildGliders(mat, 1);
-            updateScene(mat, scene);
-        }
-    });
+    connect(os1Button, &QPushButton::clicked, this, &MainWindow::os1Slot);
+    connect(os2Button, &QPushButton::clicked, this, &MainWindow::os2Slot);
+    connect(os3Button, &QPushButton::clicked, this, &MainWindow::os3Slot);
+    connect(os4Button, &QPushButton::clicked, this, &MainWindow::os4Slot);
 
-    connect(gl3Button, &QPushButton::clicked, scene, [this, &play, scene](){
-        if (!play) {
-            clearMatrix(mat);
-            buildGliders(mat, 2);
-            updateScene(mat, scene);
-        }
-    });
-
-    connect(gl4Button, &QPushButton::clicked, scene, [this, &play, scene](){
-        if (!play) {
-            clearMatrix(mat);
-            buildGliders(mat, 3);
-            updateScene(mat, scene);
-        }
-    });
-
-    connect(os1Button, &QPushButton::clicked, scene, [this, &play, scene](){
-        if (!play) {
-            clearMatrix(mat);
-            buildOscilators(mat, 0);
-            updateScene(mat, scene);
-        }
-    });
-
-    connect(os2Button, &QPushButton::clicked, scene, [this, &play, scene](){
-        if (!play) {
-            clearMatrix(mat);
-            buildOscilators(mat, 1);
-            updateScene(mat, scene);
-        }
-    });
-
-    connect(os3Button, &QPushButton::clicked, scene, [this, &play, scene](){
-        if (!play) {
-            clearMatrix(mat);
-            buildOscilators(mat, 2);
-            updateScene(mat, scene);
-        }
-    });
-
-    connect(os4Button, &QPushButton::clicked, scene, [this, &play, scene](){
-        if (!play) {
-            clearMatrix(mat);
-            //buildOscilators(mat, 3);
-            buildGun(mat);
-            updateScene(mat, scene);
-        }
-    });
-
-    connect(glGunButton, &QPushButton::clicked, scene, [this, &play, scene](){
-        if (!play) {
-            clearMatrix(mat);
-            buildGun(mat);
-            updateScene(mat, scene);
-        }
-    });
-
-    connect(rndButton, &QPushButton::clicked, scene, [this, &play, scene](){
-        if(!play) {
-            clearMatrix(mat);
-            buildRnd(mat);
-            updateScene(mat,scene);
-        }
-    });
+    connect(glGunButton, &QPushButton::clicked, this, &MainWindow::glGunSlot);
+    connect(rndButton, &QPushButton::clicked, this, &MainWindow::rndSlot);
 
     connect(repSlider, &QSlider::valueChanged, this, &MainWindow::updateRules);
-
     connect(underPopSlider, &QSlider::valueChanged, this, &MainWindow::updateRules);
-
     connect(overPopSlider, &QSlider::valueChanged, this, &MainWindow::updateRules);
 
-    connect(_timer, &QTimer::timeout, scene, [this, &play, scene]()
-    {
-        if (play) {
-            step(mat);
-            updateScene(mat, scene);
-        }
-    }
-    );
+    connect(_timer, &QTimer::timeout, this, &MainWindow::step);
 
     _timer->start(200);
 
-    //Invert the stage of a cell when clicking on it
-    connect(invButton, &QPushButton::clicked, scene, [this, view, &play, scene](){
-        if (!play) {
-            QPoint pos2 = view->pos();
-            QPoint pos = QCursor::pos();
-            QPoint coord;
-            coord.setX((pos.x()-pos2.x()-5)/SIZE);
-            coord.setY((pos.y()-pos2.y()-35)/SIZE);
-            mat[coord.x()][coord.y()].alive = !mat[coord.x()][coord.y()].alive;
-            updateScene(mat, scene);
-        }
-    });
+    connect(invButton, &QPushButton::clicked, this, &MainWindow::invButSlot);
 }
 
 MainWindow::~MainWindow()
@@ -334,28 +232,147 @@ int MainWindow::countAlive(Cell c, Cell mat[NCOL][NCOL]) //auxiliary function fo
     return r;
 }
 
-void MainWindow::step(Cell mat[NCOL][NCOL]) //animation step
+void MainWindow::step() //animation step
 {
-    int aliveCount;
-    vector<pair<int,int>> living = {};
-    for (int i = 0; i < NCOL; i++) {
-        for (int j = 0; j < NCOL; j++) {
-            aliveCount = countAlive(mat[i][j],mat);
-            //rules:
-            if(!mat[i][j].alive){
-                if(aliveCount == repRule) {
+    if (play) {
+        int aliveCount;
+        vector<pair<int,int>> living = {};
+        for (int i = 0; i < NCOL; i++) {
+            for (int j = 0; j < NCOL; j++) {
+                aliveCount = countAlive(mat[i][j],mat);
+                //rules:
+                if(!mat[i][j].alive){
+                    if(aliveCount == repRule) {
+                        living.push_back(make_pair(i,j));
+                    }
+                }
+                else if (aliveCount > underRule && aliveCount < overRule) {
                     living.push_back(make_pair(i,j));
                 }
             }
-            else if (aliveCount > underRule && aliveCount < overRule) {
-                living.push_back(make_pair(i,j));
+        }
+        for (int i = 0; i < NCOL; i++) {
+            for (int j = 0; j < NCOL; j++) {
+                mat[i][j].alive = std::find(living.begin(), living.end(), make_pair(i,j)) != living.end();
             }
         }
     }
-    for (int i = 0; i < NCOL; i++) {
-        for (int j = 0; j < NCOL; j++) {
-            mat[i][j].alive = std::find(living.begin(), living.end(), make_pair(i,j)) != living.end();
-        }
+    updateScene(mat,scene);
+}
+
+void MainWindow::switchPlay()
+{
+    play = !play;
+}
+
+void MainWindow::clearButtonSlot()
+{
+    if(!play) {
+        clearMatrix(mat);
+        updateScene(mat,scene);
+    }
+}
+
+void MainWindow::gl1Slot()
+{
+    if (!play) {
+        clearMatrix(mat);
+        buildGliders(mat, 0);
+        updateScene(mat, scene);
+    }
+}
+
+void MainWindow::gl2Slot()
+{
+    if (!play) {
+        clearMatrix(mat);
+        buildGliders(mat, 1);
+        updateScene(mat, scene);
+    }
+}
+
+void MainWindow::gl3Slot()
+{
+    if (!play) {
+        clearMatrix(mat);
+        buildGliders(mat, 2);
+        updateScene(mat, scene);
+    }
+}
+
+void MainWindow::gl4Slot()
+{
+    if (!play) {
+        clearMatrix(mat);
+        buildGliders(mat, 3);
+        updateScene(mat, scene);
+    }
+}
+
+void MainWindow::os1Slot()
+{
+    if (!play) {
+        clearMatrix(mat);
+        buildOscilators(mat, 0);
+        updateScene(mat, scene);
+    }
+}
+
+void MainWindow::os2Slot()
+{
+    if (!play) {
+        clearMatrix(mat);
+        buildOscilators(mat, 1);
+        updateScene(mat, scene);
+    }
+}
+
+void MainWindow::os3Slot()
+{
+    if (!play) {
+        clearMatrix(mat);
+        buildOscilators(mat, 2);
+        updateScene(mat, scene);
+    }
+}
+
+void MainWindow::os4Slot()
+{
+    if (!play) {
+        clearMatrix(mat);
+        buildOscilators(mat, 3);
+        updateScene(mat, scene);
+    }
+}
+
+void MainWindow::glGunSlot()
+{
+    if(!play) {
+        clearMatrix(mat);
+        buildGun(mat);
+        updateScene(mat,scene);
+    }
+}
+
+void MainWindow::rndSlot()
+{
+    if(!play) {
+        clearMatrix(mat);
+        buildRnd(mat);
+        updateScene(mat,scene);
+    }
+}
+
+void MainWindow::invButSlot()
+{
+    if (!play) {
+        QPoint pos2 = view->pos();
+        QPoint pos = QCursor::pos();
+        QPoint coord;
+        coord.setX((pos.x()-pos2.x()-5)/SIZE);
+        coord.setY((pos.y()-pos2.y()-35)/SIZE);
+        mat[coord.x()][coord.y()].alive = !mat[coord.x()][coord.y()].alive;
+        updateScene(mat, scene);
     }
 }
 

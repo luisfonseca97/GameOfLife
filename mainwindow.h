@@ -69,13 +69,16 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
-
     //Rules:
     int repRule = 3; //reproduction rule
     int underRule = 1; //underpopulation rule
     int overRule = 4; //overpopulation rule
+
+    bool play = false;
+
+    QGraphicsScene *scene = new QGraphicsScene(0, 0, WIDTH, HEIGHT+70);
+
+    QGraphicsView *view = new QGraphicsView(scene);
 
     QSlider *repSlider;
     QSlider *underPopSlider;
@@ -85,11 +88,12 @@ public:
     QGraphicsTextItem *sl2Text = new QGraphicsTextItem("Underpopulation:");
     QGraphicsTextItem *sl3Text = new QGraphicsTextItem("Overpopulation:");
 
+    MainWindow(QWidget *parent = nullptr);
+    ~MainWindow();
+
     void updateScene(Cell mat[NCOL][NCOL], QGraphicsScene *scene);
 
     int countAlive(Cell c, Cell mat[NCOL][NCOL]);
-
-    void step(Cell mat[NCOL][NCOL]);
 
     void clearMatrix (Cell mat[NCOL][NCOL]);
 
@@ -109,6 +113,24 @@ private:
 
 public slots:
     void updateRules();
+    void step();
+    void switchPlay();
+    void clearButtonSlot();
+
+    void gl1Slot();
+    void gl2Slot();
+    void gl3Slot();
+    void gl4Slot();
+
+    void os1Slot();
+    void os2Slot();
+    void os3Slot();
+    void os4Slot();
+
+    void glGunSlot();
+    void rndSlot();
+
+    void invButSlot();
 
 };
 #endif // MAINWINDOW_H
